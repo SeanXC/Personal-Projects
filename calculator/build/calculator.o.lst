@@ -1,0 +1,156 @@
+   1              	# 0 "./src/calculator.s"
+   2              	# 1 "G:\\College\\CUS11021\\1696-calculator//"
+   0              	
+   0              	
+   0              	
+   1              	  .syntax unified
+   2              	  .cpu cortex-m3
+   3              	  .fpu softvfp
+   4              	  .thumb
+   5              	  
+   6              	  .global  Main
+   7              	
+   8              	Main:
+   9 0000 4FF00A0B 	  MOV R11,#10                        @tmp=10
+  10 0004 4FF01004 	  MOV R4,#16                         @hexTmp=16
+  11              	
+  12              	identifyNum:
+  13 0008 0B78     	  LDRB R3,[R1]                       @ch3=byte[address1]
+  14 000a 002B     	  CMP R3,#0                          @while (ch3!=0)
+  15 000c 60D0     	  BEQ end                            @{
+  16 000e 302B     	  CMP R3,'0'                         @while (ch3!'0')
+  17 0010 09D0     	  BEQ ifHex                          @{
+  18              	continueIdentifyNum:
+  19 0012 302B     	  CMP R3,'0'                         @while (0<=ch3<=9)
+  20 0014 22D3     	  BLO endIdentifyNum                 @{
+  21 0016 A3F13003 	  SUB R3,R3,0x30                     @ch3=ch3-0x30(ASCII->decimal)
+  22 001a 0CFB0BFC 	  MUL R12,R12,R11                    @currentNumebr=currentNumebr*tmp
+  23 001e 9C44     	  ADD R12,R12,R3                     @currentNumebr=currentNumebr+ch3
+  24 0020 01F10101 	  ADD R1,R1,#1                       @address1=address1+1
+  25 0024 F0E7     	  B identifyNum                      @}
+  26              	
+  27              	ifHex:
+  28 0026 01F10101 	  ADD R1,R1,#1                       @address1=address1+1
+  29 002a 0B78     	  LDRB R3,[R1]                       @ch3=byte[address1]
+  30 002c 782B     	  CMP R3,'x'                         @while(ch3!='x')
+  31 002e 03D0     	  BEQ convertHex                     @{
+  32 0030 A1F10101 	  SUB R1,R1,#1                       @address1=address1-1
+  33 0034 0B78     	  LDRB R3,[R1]                       @ch3=byte[address1]
+  34 0036 ECE7     	  B continueIdentifyNum
+  35              	convertHex:
+  36 0038 01F10101 	  ADD R1,R1,#1                       @else  { address1=address1+1
+  37 003c 0B78     	  LDRB R3,[R1]                       @ch3=byte[address1]
+  38 003e 002B     	  CMP R3,#0
+  39 0040 E2D0     	  BEQ identifyNum
+  40 0042 302B     	  CMP R3,'0'
+  41 0044 0AD3     	  BLO endIdentifyNum
+  42 0046 412B     	  CMP R3,'A'
+  43 0048 02D3     	  BLO notConvert
+  44 004a A3F13703 	  SUB R3,R3,0x37                     @ch3=ch3-0x37(ASCII->decimal)
+  45 004e 01E0     	  B continueConvert
+  46              	notConvert:
+  47 0050 A3F13003 	  SUB R3,R3,0x30
+  48              	continueConvert:
+  49 0054 0CFB04FC 	  MUL R12,R12,R4                       @currentNumebr=currentNumebr*tmp
+  50 0058 9C44     	  ADD R12,R12,R3                       @currentNumebr=currentNumebr+ch3
+  51 005a EDE7     	  B convertHex
+  52              	
+  53              	
+  54              	
+  55              	endIdentifyNum:
+  56 005c 08F10108 	  ADD R8,R8,#1                       @count=count+1(use count to judge if the number is the first n
+  57 0060 B9F1010F 	  CMP R9,#1                          @if(addFlag)
+  58 0064 18D0     	  BEQ doAdd                          @{jump to doAdd function}
+  59 0066 B9F1020F 	  CMP R9,#2                          @if(subFlag)
+  60 006a 20D0     	  BEQ doSub                          @{jump to doSub function}
+  61 006c B9F1030F 	  CMP R9,#3                          @if(mulFlage)
+  62 0070 29D0     	  BEQ doMul                          @{jump to doMul function}
+  63 0072 B8F1010F 	  CMP R8,#1                          @if (currentNumber is the first number in the expression)
+  64 0076 00D8     	  BHI resetCurrentNum                @{(get previousnumber)
+  65 0078 E246     	  MOV R10,R12                        @previousNumebr=currentNumebr   }
+  66              	resetCurrentNum:
+  67 007a 4FF0000C 	  MOV R12,#0                         @reset currentNumebr=0
+  68              	identifySymble:
+  69 007e 2B2B     	  CMP R3,0x2b                        @if (ch3='+')
+  70 0080 03D0     	  BEQ addFlag                        @{jump to set addFlag}
+  71 0082 2D2B     	  CMP R3,0x2d                        @if (ch3='-')
+  72 0084 0CD0     	  BEQ subFlag                        @{jump to set subFlag}
+  73 0086 2A2B     	  CMP R3,0x2a                        @if (ch3='*')
+  74 0088 16D0     	  BEQ mulFlag                        @{jump to set mulFlag}
+  75              	
+  76              	addFlag:
+  77 008a 4FF00109 	  MOV R9,#1                          @set addFlag
+  78 008e 01F10101 	  ADD R1,R1,#1                       @address1=address+1
+  79 0092 4FF0000C 	  MOV R12,#0                         @initial current number
+  80 0096 B7E7     	  B identifyNum                      @back to get the next numebr
+  81              	doAdd:
+  82 0098 E244     	  ADD R10,R10,R12                    @previousNumber=previousNumber+currentNumber
+  83 009a 4FF00009 	  MOV R9,#0                          @reset flag=0
+  84 009e B3E7     	  B identifyNum                      @back to get the next number
+  85              	
+  86              	subFlag:
+  87 00a0 4FF00209 	  MOV R9,#2                          @set subFlag
+  88 00a4 01F10101 	  ADD R1,R1,#1                       @address1=address+1
+  89 00a8 4FF0000C 	  MOV R12,#0                         @initial current number
+  90 00ac ACE7     	  B identifyNum                      @back to get the next number
+  91              	doSub:
+  92 00ae AAEB0C0A 	  SUB R10,R10,R12                    @previousNumber=previousNumber-currentNumber
+  93 00b2 4FF00009 	  MOV R9,#0                          @reset flag=0
+  94 00b6 A7E7     	  B identifyNum                      @back to get the next number
+  95              	
+  96              	mulFlag:
+  97 00b8 4FF00309 	  MOV R9,#3                          @set mulFlag
+  98 00bc 01F10101 	  ADD R1,R1,#1                       @address1=address+1
+  99 00c0 4FF0000C 	  MOV R12,#0                         @initial curent number
+ 100 00c4 A0E7     	  B identifyNum                      @back to get the next number
+ 101              	doMul:
+ 102 00c6 0AFB0CFA 	  MUL R10,R10,R12                    @previousNumber=previousNumber*currentNumber
+ 103 00ca 4FF00009 	  MOV R9,#0                          @initial curent number
+ 104 00ce 9BE7     	  B identifyNum                      @back to get the next number
+ 105              	
+ 106              	end:
+ 107 00d0 B9F1010F 	  CMP R9,#1                          @check addFlag
+ 108 00d4 05D0     	  BEQ addLast                        @if(addFlag){do addLast}
+ 109 00d6 B9F1020F 	  CMP R9,#2                          @check subFlag
+ 110 00da 05D0     	  BEQ subLast                        @if(addFlag){do mulLast}
+ 111 00dc B9F1030F 	  CMP R9,#3                          @check mulFlag
+ 112 00e0 05D0     	  BEQ mulLast                        @if(addFlag){do mulLast}
+ 113              	addLast:
+ 114 00e2 0AEB0C00 	  ADD R0,R10,R12                     @do addLast=previous+current
+ 115 00e6 05E0     	  B End_Main                         @done
+ 116              	subLast:
+ 117 00e8 AAEB0C00 	  SUB R0,R10,R12                     @do addLast=previous-current
+ 118 00ec 02E0     	  B End_Main                         @done
+ 119              	mulLast:
+ 120 00ee 0AFB0CF0 	  MUL R0,R10,R12                     @do addLast=previous*current
+ 121 00f2 FFE7     	  B End_Main                         @done
+ 122              	
+ 123              	End_Main:
+ 124 00f4 7047     	  BX    LR
+ 125              	
+ 126              	  .end...
+DEFINED SYMBOLS
+  ./src/calculator.s:8      .text:0000000000000000 Main
+  ./src/calculator.s:9      .text:0000000000000000 $t
+  ./src/calculator.s:12     .text:0000000000000008 identifyNum
+  ./src/calculator.s:106    .text:00000000000000d0 end
+  ./src/calculator.s:27     .text:0000000000000026 ifHex
+  ./src/calculator.s:18     .text:0000000000000012 continueIdentifyNum
+  ./src/calculator.s:55     .text:000000000000005c endIdentifyNum
+  ./src/calculator.s:35     .text:0000000000000038 convertHex
+  ./src/calculator.s:46     .text:0000000000000050 notConvert
+  ./src/calculator.s:48     .text:0000000000000054 continueConvert
+  ./src/calculator.s:81     .text:0000000000000098 doAdd
+  ./src/calculator.s:91     .text:00000000000000ae doSub
+  ./src/calculator.s:101    .text:00000000000000c6 doMul
+  ./src/calculator.s:66     .text:000000000000007a resetCurrentNum
+  ./src/calculator.s:68     .text:000000000000007e identifySymble
+  ./src/calculator.s:76     .text:000000000000008a addFlag
+  ./src/calculator.s:86     .text:00000000000000a0 subFlag
+  ./src/calculator.s:96     .text:00000000000000b8 mulFlag
+  ./src/calculator.s:113    .text:00000000000000e2 addLast
+  ./src/calculator.s:116    .text:00000000000000e8 subLast
+  ./src/calculator.s:119    .text:00000000000000ee mulLast
+  ./src/calculator.s:123    .text:00000000000000f4 End_Main
+
+NO UNDEFINED SYMBOLS
